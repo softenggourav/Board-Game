@@ -57,18 +57,12 @@ public class GameService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is already finished.");
         }
 
-        // Check if the move is within the valid range of the board
-        if (row < 0 || row > 2 || col < 0 || col > 2) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Move is out of bounds.");
-        }
-
-
         Player player = playerRepository.findById(playerId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
         GameLogic gameLogic = games.get(gameId);
 
         if (!gameLogic.isValidMove(row, col)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Move has already been made.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not a valid move");
         }
 
         boolean win = gameLogic.makeMove(row, col, player.getSymbol());
