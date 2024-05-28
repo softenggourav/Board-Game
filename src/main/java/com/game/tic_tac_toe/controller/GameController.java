@@ -40,4 +40,10 @@ public class GameController {
         Game endedGame = gameService.endGame(gameId);
         return ResponseEntity.ok(endedGame);
     }
+
+    @GetMapping("{gameId}")
+    public ResponseEntity<Game> checkGameStatus(@PathVariable Long gameId) {
+        Game game = gameService.checkGameStatus(gameId);
+        return ResponseEntity.ok(game);
+    }
 }

@@ -94,4 +94,9 @@ public class GameService {
         game.setStatus("ENDED");
         return gameRepository.save(game);
     }
+
+    public Game checkGameStatus(Long gameId) {
+        return gameRepository.findById(gameId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+    }
 }
