@@ -15,6 +15,9 @@ public class Game {
 
     private String status; // e.g., "IN_PROGRESS", "DRAW", "WINNER_X", "WINNER_O"
 
+    @Column(nullable = true)
+    private Long currentPlayerId;
+
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<Move> moves;

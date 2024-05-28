@@ -67,6 +67,15 @@ public class GameService {
 
         boolean win = gameLogic.makeMove(row, col, player.getSymbol());
 
+        // Check if it's the player's turn
+        if (game.getCurrentPlayerId()==null) {
+            game.setCurrentPlayerId(playerId);
+        } else if (game.getCurrentPlayerId().equals(playerId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "It's not your turn.");
+        } else {
+            game.setCurrentPlayerId(playerId);
+        }
+
         Move move = new Move();
         move.setGame(game);
         move.setPlayer(player);
@@ -84,6 +93,9 @@ public class GameService {
         if (gameLogic instanceof TicTacToeLogic) {
             String boardState = ((TicTacToeLogic) gameLogic).getBoardState();
             logger.info("Board state after move:\n{}", boardState);
+            if(win){
+                logger.info("******************** Player {} win **********************", player.getSymbol());
+            }
         }
         return move;
     }
