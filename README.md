@@ -2,5 +2,5 @@ Tic-Tac-Toe Game, written in a way that we could extend the same code for any ot
 
 **Issue**:
 
-    - UI is not working correctly, taking X value only.
+    - Currently, we need to play using APIs
 
