@@ -47,89 +47,86 @@ public class GameService {
         GameLogic gameLogic = gameFactory.createGameLogic(gameType);
         gameLogic.startGame();
         games.put(game.getId(), gameLogic);
-        String boardState = gameLogic.getBoardState();
-        logger.info("Board state for game {}:\n{}", game.getId(), boardState);
+        logBoardState(game.getId(), gameLogic);
 
         return game;
     }
 
     public Move makeMove(Long gameId, Long playerId, int row, int col) {
-        Game game = gameRepository.findById(gameId).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+        Game game = getGameById(gameId);
+        checkGameInProgress(game);
+        Player player = getPlayerById(playerId);
 
-        // Check if the game is already finished
-        if (!game.getStatus().equals(GameStatus.IN_PROGRESS)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is already finished.");
-        }
-
-        Player player = playerRepository.findById(playerId).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
         GameLogic gameLogic = games.get(gameId);
-
-        if (!gameLogic.isValidMove(row, col)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not a valid move");
-        }
+        validateMove(gameLogic, row, col);
 
         boolean win = gameLogic.makeMove(row, col, player.getSymbol());
+        updateGameCurrentPlayer(game, playerId);
 
-        // Check if it's the player's turn
-        if (game.getCurrentPlayerId() == null) {
-            game.setCurrentPlayerId(playerId);
-        } else if (game.getCurrentPlayerId().equals(playerId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "It's not your turn.");
-        } else {
-            game.setCurrentPlayerId(playerId);
-        }
+        Move move = createAndSaveMove(game, player, row, col);
+        updateGameStatus(game, gameLogic, win);
 
-        Move move = new Move();
-        move.setGame(game);
-        move.setPlayer(player);
-        move.setRow(row);
-        move.setCol(col);
-        move = moveRepository.save(move);
-
-        if (win) {
-            game.setStatus(GameStatus.WINNER);
-        } else if (gameLogic.checkDraw()) {
-            game.setStatus(GameStatus.DRAW);
-        }
-
-        gameRepository.save(game);
-        String boardState = gameLogic.getBoardState();
-        logger.info("Board state for game {}:\n{}", game.getId(), boardState);
-        if (win) {
-            logger.info("******************** Player {} win **********************", player.getSymbol());
-        }
+        logBoardState(gameId, gameLogic);
+        logWin(player, win);
 
         return move;
     }
 
     public Game endGame(Long gameId) {
-        Game game = gameRepository.findById(gameId).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+        Game game = getGameById(gameId);
         game.setStatus(GameStatus.ENDED);
         return gameRepository.save(game);
     }
 
     public Game checkGameStatus(Long gameId) {
+        return getGameById(gameId);
+    }
+
+    public Move makeMoveComputer(Long gameId, Long playerId) {
+        Game game = getGameById(gameId);
+        checkGameInProgress(game);
+        Player player = getPlayerById(playerId);
+
+        GameLogic gameLogic = games.get(gameId);
+        updateGameCurrentPlayer(game, playerId);
+
+        int[] computerMove = determineComputerMove(gameLogic, game.getLevel());
+        int row = computerMove[0];
+        int col = computerMove[1];
+
+        boolean win = gameLogic.makeMove(row, col, player.getSymbol());
+        Move move = createAndSaveMove(game, player, row, col);
+        updateGameStatus(game, gameLogic, win);
+
+        logBoardState(gameId, gameLogic);
+        logWin(player, win);
+
+        return move;
+    }
+
+    private Game getGameById(Long gameId) {
         return gameRepository.findById(gameId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
     }
 
-    public Move makeMoveComputer(Long gameId, Long playerId) {
-        Game game = gameRepository.findById(gameId).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+    private Player getPlayerById(Long playerId) {
+        return playerRepository.findById(playerId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
+    }
 
-        // Check if the game is already finished
+    private void checkGameInProgress(Game game) {
         if (!game.getStatus().equals(GameStatus.IN_PROGRESS)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is already finished.");
         }
+    }
 
-        Player player = playerRepository.findById(playerId).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
-        GameLogic gameLogic = games.get(gameId);
+    private void validateMove(GameLogic gameLogic, int row, int col) {
+        if (!gameLogic.isValidMove(row, col)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not a valid move");
+        }
+    }
 
-        // Check if it's the player's turn
+    private void updateGameCurrentPlayer(Game game, Long playerId) {
         if (game.getCurrentPlayerId() == null) {
             game.setCurrentPlayerId(playerId);
         } else if (game.getCurrentPlayerId().equals(playerId)) {
@@ -137,40 +134,45 @@ public class GameService {
         } else {
             game.setCurrentPlayerId(playerId);
         }
-        int[] computerMove = new int[2];
-        if(game.getLevel()==GameLevel.EASY){
-            computerMove = gameLogic.determineEasyMove();
-        } else if (game.getLevel()==GameLevel.MEDIUM) {
-            computerMove = gameLogic.determineMediumMove();
-        }
-        else if (game.getLevel()==GameLevel.HARD){
-            computerMove = gameLogic.determineBestMove();
-        }
-        int row = computerMove[0];
-        int col = computerMove[1];
+    }
 
-        boolean win = gameLogic.makeMove(row, col, player.getSymbol());
-
-
+    private Move createAndSaveMove(Game game, Player player, int row, int col) {
         Move move = new Move();
         move.setGame(game);
         move.setPlayer(player);
         move.setRow(row);
         move.setCol(col);
-        move = moveRepository.save(move);
+        return moveRepository.save(move);
+    }
 
+    private void updateGameStatus(Game game, GameLogic gameLogic, boolean win) {
         if (win) {
             game.setStatus(GameStatus.WINNER);
         } else if (gameLogic.checkDraw()) {
             game.setStatus(GameStatus.DRAW);
         }
-
         gameRepository.save(game);
+    }
+
+    private void logBoardState(Long gameId, GameLogic gameLogic) {
         String boardState = gameLogic.getBoardState();
-        logger.info("Board state for game {}:\n{}", game.getId(), boardState);
+        logger.info("Board state for game {}:\n{}", gameId, boardState);
+    }
+
+    private void logWin(Player player, boolean win) {
         if (win) {
             logger.info("******************** Player {} win **********************", player.getSymbol());
         }
-        return move;
+    }
+
+    private int[] determineComputerMove(GameLogic gameLogic, GameLevel gameLevel) {
+        if (gameLevel == GameLevel.EASY) {
+            return gameLogic.determineEasyMove();
+        } else if (gameLevel == GameLevel.MEDIUM) {
+            return gameLogic.determineMediumMove();
+        } else if (gameLevel == GameLevel.HARD) {
+            return gameLogic.determineBestMove();
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid game level");
     }
 }
