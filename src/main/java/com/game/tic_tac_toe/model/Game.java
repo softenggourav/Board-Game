@@ -13,7 +13,7 @@ public class Game {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String status; // e.g., "IN_PROGRESS", "DRAW", "WINNER_X", "WINNER_O"
+    private String status; // e.g., "IN_PROGRESS", "DRAW", "WINNER", "END"
 
     @Column(nullable = true)
     private Long currentPlayerId;

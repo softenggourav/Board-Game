@@ -36,6 +36,9 @@ public class GameService {
     @Autowired
     private GameFactory gameFactory;
 
+    @Autowired
+    private ComputerPlayerService computerPlayerService;
+
     public Game startNewGame(String gameType, Player player1, Player player2) {
         Game game = new Game();
         game.setStatus("IN_PROGRESS");
@@ -68,7 +71,7 @@ public class GameService {
         boolean win = gameLogic.makeMove(row, col, player.getSymbol());
 
         // Check if it's the player's turn
-        if (game.getCurrentPlayerId()==null) {
+        if (game.getCurrentPlayerId() == null) {
             game.setCurrentPlayerId(playerId);
         } else if (game.getCurrentPlayerId().equals(playerId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "It's not your turn.");
@@ -84,7 +87,7 @@ public class GameService {
         move = moveRepository.save(move);
 
         if (win) {
-            game.setStatus("WINNER_" + player.getSymbol());
+            game.setStatus("WINNER");
         } else if (gameLogic.checkDraw()) {
             game.setStatus("DRAW");
         }
@@ -93,7 +96,7 @@ public class GameService {
         if (gameLogic instanceof TicTacToeLogic) {
             String boardState = ((TicTacToeLogic) gameLogic).getBoardState();
             logger.info("Board state after move:\n{}", boardState);
-            if(win){
+            if (win) {
                 logger.info("******************** Player {} win **********************", player.getSymbol());
             }
         }
@@ -110,5 +113,57 @@ public class GameService {
     public Game checkGameStatus(Long gameId) {
         return gameRepository.findById(gameId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+    }
+
+    public Move makeMoveComputer(Long gameId, Long playerId) {
+        Game game = gameRepository.findById(gameId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+
+        // Check if the game is already finished
+        if (!game.getStatus().equals("IN_PROGRESS")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is already finished.");
+        }
+
+        Player player = playerRepository.findById(playerId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
+        GameLogic gameLogic = games.get(gameId);
+
+        // Check if it's the player's turn
+        if (game.getCurrentPlayerId() == null) {
+            game.setCurrentPlayerId(playerId);
+        } else if (game.getCurrentPlayerId().equals(playerId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "It's not your turn.");
+        } else {
+            game.setCurrentPlayerId(playerId);
+        }
+        int[] computerMove = computerPlayerService.determineMove2(gameLogic);
+        int row = computerMove[0];
+        int col = computerMove[1];
+
+        boolean win = gameLogic.makeMove(row, col, player.getSymbol());
+
+
+        Move move = new Move();
+        move.setGame(game);
+        move.setPlayer(player);
+        move.setRow(row);
+        move.setCol(col);
+        move = moveRepository.save(move);
+
+        if (win) {
+            game.setStatus("WINNER");
+        } else if (gameLogic.checkDraw()) {
+            game.setStatus("DRAW");
+        }
+
+        gameRepository.save(game);
+        if (gameLogic instanceof TicTacToeLogic) {
+            String boardState = ((TicTacToeLogic) gameLogic).getBoardState();
+            logger.info("Board state for game {} after move:\n{}", gameId, boardState);
+            if (win) {
+                logger.info("******************** Player {} win **********************", player.getSymbol());
+            }
+        }
+        return move;
     }
 }
