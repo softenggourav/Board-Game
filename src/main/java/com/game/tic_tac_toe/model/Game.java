@@ -1,6 +1,8 @@
 package com.game.tic_tac_toe.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.game.tic_tac_toe.constants.GameLevel;
+import com.game.tic_tac_toe.constants.GameStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -13,7 +15,10 @@ public class Game {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String status; // e.g., "IN_PROGRESS", "DRAW", "WINNER", "END"
+    private GameStatus status;
+
+
+    private GameLevel level;
 
     @Column(nullable = true)
     private Long currentPlayerId;

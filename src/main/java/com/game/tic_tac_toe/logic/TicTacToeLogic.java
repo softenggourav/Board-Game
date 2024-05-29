@@ -68,7 +68,7 @@ public class TicTacToeLogic implements GameLogic {
                 if (j < 2) sb.append(" | ");
             }
             sb.append("\n");
-            if (i < 2) sb.append("-----\n");
+            if (i < 2) sb.append("---------\n");
         }
         return sb.toString();
     }

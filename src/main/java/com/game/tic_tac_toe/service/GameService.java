@@ -1,8 +1,10 @@
 package com.game.tic_tac_toe.service;
 
+import com.game.tic_tac_toe.constants.GameLevel;
+import com.game.tic_tac_toe.constants.GameStatus;
+import com.game.tic_tac_toe.constants.GameType;
 import com.game.tic_tac_toe.factory.GameFactory;
 import com.game.tic_tac_toe.logic.GameLogic;
-import com.game.tic_tac_toe.logic.TicTacToeLogic;
 import com.game.tic_tac_toe.model.Game;
 import com.game.tic_tac_toe.model.Move;
 import com.game.tic_tac_toe.model.Player;
@@ -36,17 +38,17 @@ public class GameService {
     @Autowired
     private GameFactory gameFactory;
 
-    @Autowired
-    private ComputerPlayerService computerPlayerService;
-
-    public Game startNewGame(String gameType, Player player1, Player player2) {
+    public Game startNewGame(GameType gameType, GameLevel gameLevel, Player player1, Player player2) {
         Game game = new Game();
-        game.setStatus("IN_PROGRESS");
+        game.setStatus(GameStatus.IN_PROGRESS);
+        game.setLevel(gameLevel);
         game = gameRepository.save(game);
 
         GameLogic gameLogic = gameFactory.createGameLogic(gameType);
         gameLogic.startGame();
         games.put(game.getId(), gameLogic);
+        String boardState = gameLogic.getBoardState();
+        logger.info("Board state for game {}:\n{}", game.getId(), boardState);
 
         return game;
     }
@@ -56,7 +58,7 @@ public class GameService {
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
 
         // Check if the game is already finished
-        if (!game.getStatus().equals("IN_PROGRESS")) {
+        if (!game.getStatus().equals(GameStatus.IN_PROGRESS)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is already finished.");
         }
 
@@ -87,26 +89,25 @@ public class GameService {
         move = moveRepository.save(move);
 
         if (win) {
-            game.setStatus("WINNER");
+            game.setStatus(GameStatus.WINNER);
         } else if (gameLogic.checkDraw()) {
-            game.setStatus("DRAW");
+            game.setStatus(GameStatus.DRAW);
         }
 
         gameRepository.save(game);
-        if (gameLogic instanceof TicTacToeLogic) {
-            String boardState = ((TicTacToeLogic) gameLogic).getBoardState();
-            logger.info("Board state after move:\n{}", boardState);
-            if (win) {
-                logger.info("******************** Player {} win **********************", player.getSymbol());
-            }
+        String boardState = gameLogic.getBoardState();
+        logger.info("Board state for game {}:\n{}", game.getId(), boardState);
+        if (win) {
+            logger.info("******************** Player {} win **********************", player.getSymbol());
         }
+
         return move;
     }
 
     public Game endGame(Long gameId) {
         Game game = gameRepository.findById(gameId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
-        game.setStatus("ENDED");
+        game.setStatus(GameStatus.ENDED);
         return gameRepository.save(game);
     }
 
@@ -120,7 +121,7 @@ public class GameService {
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
 
         // Check if the game is already finished
-        if (!game.getStatus().equals("IN_PROGRESS")) {
+        if (!game.getStatus().equals(GameStatus.IN_PROGRESS)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Game is already finished.");
         }
 
@@ -136,7 +137,15 @@ public class GameService {
         } else {
             game.setCurrentPlayerId(playerId);
         }
-        int[] computerMove = computerPlayerService.determineMove2(gameLogic);
+        int[] computerMove = new int[2];
+        if(game.getLevel()==GameLevel.EASY){
+            computerMove = gameLogic.determineEasyMove();
+        } else if (game.getLevel()==GameLevel.MEDIUM) {
+            computerMove = gameLogic.determineMediumMove();
+        }
+        else if (game.getLevel()==GameLevel.HARD){
+            computerMove = gameLogic.determineBestMove();
+        }
         int row = computerMove[0];
         int col = computerMove[1];
 
@@ -151,18 +160,16 @@ public class GameService {
         move = moveRepository.save(move);
 
         if (win) {
-            game.setStatus("WINNER");
+            game.setStatus(GameStatus.WINNER);
         } else if (gameLogic.checkDraw()) {
-            game.setStatus("DRAW");
+            game.setStatus(GameStatus.DRAW);
         }
 
         gameRepository.save(game);
-        if (gameLogic instanceof TicTacToeLogic) {
-            String boardState = ((TicTacToeLogic) gameLogic).getBoardState();
-            logger.info("Board state for game {} after move:\n{}", gameId, boardState);
-            if (win) {
-                logger.info("******************** Player {} win **********************", player.getSymbol());
-            }
+        String boardState = gameLogic.getBoardState();
+        logger.info("Board state for game {}:\n{}", game.getId(), boardState);
+        if (win) {
+            logger.info("******************** Player {} win **********************", player.getSymbol());
         }
         return move;
     }

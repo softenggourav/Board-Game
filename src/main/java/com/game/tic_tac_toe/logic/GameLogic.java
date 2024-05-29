@@ -9,6 +9,8 @@ public interface GameLogic {
 
     boolean checkDraw();
 
+    String getBoardState();
+
     boolean isValidMove(int row, int col);
 
     int[] determineEasyMove();
