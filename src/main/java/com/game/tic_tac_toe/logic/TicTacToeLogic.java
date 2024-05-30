@@ -67,12 +67,14 @@ public class TicTacToeLogic implements GameLogic {
     public String getBoardState() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 3; i++) {
+            sb.append(" | ");
             for (int j = 0; j < 3; j++) {
                 sb.append(board[i][j]);
                 if (j < 2) sb.append(" | ");
             }
+            sb.append(" | ");
             sb.append("\n");
-            if (i < 2) sb.append("---------\n");
+            sb.append("---------------\n");
         }
         return sb.toString();
     }

@@ -185,7 +185,7 @@ public class GameService {
 
     private void logWin(Player player, boolean win) {
         if (win) {
-            logger.info("******************** Player {} win **********************", player.getSymbol());
+            logger.info("******************** Player {} win **********************", player.getName());
         }
     }
 
