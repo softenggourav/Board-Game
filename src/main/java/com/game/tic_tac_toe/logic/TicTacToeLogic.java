@@ -36,6 +36,7 @@ public class TicTacToeLogic implements GameLogic {
         return false;
     }
 
+    @Override
     public boolean isValidMove(int row, int col) {
         return row >= 0 && row < 3 && col >= 0 && col < 3 && board[row][col] == ' ';
     }
@@ -64,6 +65,7 @@ public class TicTacToeLogic implements GameLogic {
         return true;
     }
 
+    @Override
     public String getBoardState() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 3; i++) {
@@ -79,10 +81,8 @@ public class TicTacToeLogic implements GameLogic {
         return sb.toString();
     }
 
-    // Minimax algorithm to determine the best move
-
-    // Easy level: random move
-    public int[] determineEasyMove() {
+    @Override
+    public int[] determineEasyMove(char symbol) {
         int row, col;
         do {
             row = random.nextInt(3);
@@ -91,12 +91,15 @@ public class TicTacToeLogic implements GameLogic {
         return new int[]{row, col};
     }
 
-    public int[] determineMediumMove() {
+    @Override
+    public int[] determineMediumMove(char symbol) {
+        char opponentSymbol = (symbol == 'X') ? 'O' : 'X';
+
         // Check if computer can win in the next move
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (isValidMove(i, j)) {
-                    board[i][j] = 'O';
+                    board[i][j] = symbol;
                     if (checkWin()) {
                         board[i][j] = ' '; // Reset after checking
                         return new int[]{i, j};
@@ -105,11 +108,12 @@ public class TicTacToeLogic implements GameLogic {
                 }
             }
         }
+
         // Check if player can win in the next move and block them
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (isValidMove(i, j)) {
-                    board[i][j] = 'X';
+                    board[i][j] = opponentSymbol;
                     if (checkWin()) {
                         board[i][j] = ' '; // Reset after checking
                         return new int[]{i, j};
@@ -118,18 +122,20 @@ public class TicTacToeLogic implements GameLogic {
                 }
             }
         }
+
         // Otherwise, make a random move
-        return determineEasyMove();
+        return determineEasyMove(symbol);
     }
 
-    public int[] determineBestMove() {
+    @Override
+    public int[] determineBestMove(char symbol) {
         int bestScore = Integer.MIN_VALUE;
         int[] bestMove = new int[2];
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (board[i][j] == ' ') {
-                    board[i][j] = 'O'; // Assume 'O' is the computer
-                    int score = minimax(board, 0, false);
+                    board[i][j] = symbol;
+                    int score = minimax(board, 0, false, symbol);
                     board[i][j] = ' ';
                     if (score > bestScore) {
                         bestScore = score;
@@ -142,7 +148,9 @@ public class TicTacToeLogic implements GameLogic {
         return bestMove;
     }
 
-    private int minimax(char[][] board, int depth, boolean isMaximizing) {
+    private int minimax(char[][] board, int depth, boolean isMaximizing, char symbol) {
+        char opponentSymbol = (symbol == 'X') ? 'O' : 'X';
+
         if (checkWin()) {
             return isMaximizing ? -1 : 1;
         }
@@ -155,8 +163,8 @@ public class TicTacToeLogic implements GameLogic {
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
                     if (board[i][j] == ' ') {
-                        board[i][j] = 'O';
-                        int score = minimax(board, depth + 1, false);
+                        board[i][j] = symbol;
+                        int score = minimax(board, depth + 1, false, symbol);
                         board[i][j] = ' ';
                         bestScore = Math.max(score, bestScore);
                     }
@@ -168,8 +176,8 @@ public class TicTacToeLogic implements GameLogic {
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
                     if (board[i][j] == ' ') {
-                        board[i][j] = 'X';
-                        int score = minimax(board, depth + 1, true);
+                        board[i][j] = opponentSymbol;
+                        int score = minimax(board, depth + 1, true, symbol);
                         board[i][j] = ' ';
                         bestScore = Math.min(score, bestScore);
                     }

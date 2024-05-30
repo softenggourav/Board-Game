@@ -82,7 +82,7 @@ public class GameService {
         gameStateRepository.save(gameState);
 
         logBoardState(gameId, gameLogic);
-        logWin(player, win);
+        logWin(player, gameLogic, win);
 
         return move;
     }
@@ -108,7 +108,7 @@ public class GameService {
         GameLogic gameLogic = games.get(gameId);
         updateGameCurrentPlayer(game, playerId);
 
-        int[] computerMove = determineComputerMove(gameLogic, game.getLevel());
+        int[] computerMove = determineComputerMove(gameLogic, game.getLevel(), player.getSymbol());
         int row = computerMove[0];
         int col = computerMove[1];
 
@@ -123,7 +123,7 @@ public class GameService {
         gameStateRepository.save(gameState);
 
         logBoardState(gameId, gameLogic);
-        logWin(player, win);
+        logWin(player, gameLogic, win);
 
         return move;
     }
@@ -183,19 +183,22 @@ public class GameService {
         logger.info("Board state for game {}:\n{}", gameId, boardState);
     }
 
-    private void logWin(Player player, boolean win) {
+    private void logWin(Player player, GameLogic gameLogic, boolean win) {
         if (win) {
             logger.info("******************** Player {} win **********************", player.getName());
         }
+        else if (gameLogic.checkDraw()) {
+            logger.info("******************** Game Draw **********************");
+        }
     }
 
-    private int[] determineComputerMove(GameLogic gameLogic, GameLevel gameLevel) {
+    private int[] determineComputerMove(GameLogic gameLogic, GameLevel gameLevel, char symbol) {
         if (gameLevel == GameLevel.EASY) {
-            return gameLogic.determineEasyMove();
+            return gameLogic.determineEasyMove(symbol);
         } else if (gameLevel == GameLevel.MEDIUM) {
-            return gameLogic.determineMediumMove();
+            return gameLogic.determineMediumMove(symbol);
         } else if (gameLevel == GameLevel.HARD) {
-            return gameLogic.determineBestMove();
+            return gameLogic.determineBestMove(symbol);
         }
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid game level");
     }

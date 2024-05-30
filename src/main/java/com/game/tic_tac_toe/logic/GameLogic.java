@@ -13,11 +13,11 @@ public interface GameLogic {
 
     boolean isValidMove(int row, int col);
 
-    int[] determineEasyMove();
+    int[] determineEasyMove(char symbol);
 
-    int[] determineMediumMove();
+    int[] determineMediumMove(char symbol);
 
-    int[] determineBestMove();
+    int[] determineBestMove(char symbol);
 
     char[][] getBoard();
 

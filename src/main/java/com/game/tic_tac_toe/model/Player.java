@@ -11,5 +11,7 @@ public class Player {
     private Long id;
 
     private String name;
-    private char symbol;
+
+    @Column(nullable = true)
+    private Character symbol;
 }

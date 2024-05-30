@@ -14,6 +14,10 @@ public class PlayerService {
         return playerRepository.save(player);
     }
 
+    public void updatePlayer(Player player) {
+        playerRepository.save(player);
+    }
+
     public Player getPlayerById(Long id) {
         return playerRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Player not found"));
     }
