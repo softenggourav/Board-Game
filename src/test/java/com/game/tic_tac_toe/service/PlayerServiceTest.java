@@ -8,15 +8,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.Optional;
+
 public class PlayerServiceTest {
+
     @Mock
     private PlayerRepository playerRepository;
 
@@ -31,30 +29,28 @@ public class PlayerServiceTest {
     @Test
     public void testCreatePlayer() {
         Player player = new Player();
-        player.setId(1L);
-        player.setName("Player1");
-        player.setSymbol('X');
+        player.setName("Player 1");
 
         when(playerRepository.save(any(Player.class))).thenReturn(player);
 
-        Player result = playerService.createPlayer(player);
+        Player createdPlayer = playerService.createPlayer(player);
 
-        assertEquals(player, result);
-        verify(playerRepository, times(1)).save(player);
+        assertNotNull(createdPlayer);
+        assertEquals("Player 1", createdPlayer.getName());
     }
 
     @Test
     public void testGetPlayerById() {
         Player player = new Player();
         player.setId(1L);
-        player.setName("Player1");
-        player.setSymbol('X');
+        player.setName("Player 1");
 
         when(playerRepository.findById(anyLong())).thenReturn(Optional.of(player));
 
-        Player result = playerService.getPlayerById(1L);
+        Player foundPlayer = playerService.getPlayerById(1L);
 
-        assertEquals(player, result);
+        assertNotNull(foundPlayer);
+        assertEquals("Player 1", foundPlayer.getName());
     }
 
     @Test

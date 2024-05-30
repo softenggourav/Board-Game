@@ -148,7 +148,7 @@ public class TicTacToeLogic implements GameLogic {
         return bestMove;
     }
 
-    private int minimax(char[][] board, int depth, boolean isMaximizing, char symbol) {
+    public int minimax(char[][] board, int depth, boolean isMaximizing, char symbol) {
         char opponentSymbol = (symbol == 'X') ? 'O' : 'X';
 
         if (checkWin()) {
