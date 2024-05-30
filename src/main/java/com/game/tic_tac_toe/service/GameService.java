@@ -6,9 +6,11 @@ import com.game.tic_tac_toe.constants.GameType;
 import com.game.tic_tac_toe.factory.GameFactory;
 import com.game.tic_tac_toe.logic.GameLogic;
 import com.game.tic_tac_toe.model.Game;
+import com.game.tic_tac_toe.model.GameState;
 import com.game.tic_tac_toe.model.Move;
 import com.game.tic_tac_toe.model.Player;
 import com.game.tic_tac_toe.repository.GameRepository;
+import com.game.tic_tac_toe.repository.GameStateRepository;
 import com.game.tic_tac_toe.repository.MoveRepository;
 import com.game.tic_tac_toe.repository.PlayerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,9 @@ public class GameService {
     @Autowired
     private GameFactory gameFactory;
 
+    @Autowired
+    private GameStateRepository gameStateRepository;
+
     public Game startNewGame(GameType gameType, GameLevel gameLevel, Player player1, Player player2) {
         Game game = new Game();
         game.setStatus(GameStatus.IN_PROGRESS);
@@ -47,6 +52,9 @@ public class GameService {
         GameLogic gameLogic = gameFactory.createGameLogic(gameType);
         gameLogic.startGame();
         games.put(game.getId(), gameLogic);
+
+        GameState gameState = new GameState(game.getId().toString(), gameLogic.getBoard(), 'X');
+        gameStateRepository.save(gameState);
         logBoardState(game.getId(), gameLogic);
 
         return game;
@@ -57,6 +65,7 @@ public class GameService {
         checkGameInProgress(game);
         Player player = getPlayerById(playerId);
 
+        GameState gameState = getGameStateByGameId(gameId);
         GameLogic gameLogic = games.get(gameId);
         validateMove(gameLogic, row, col);
 
@@ -66,6 +75,11 @@ public class GameService {
         Move move = createAndSaveMove(game, player, row, col);
         updateGameStatus(game, gameLogic, win);
         clearGamesMap(game);
+
+        // Update game state in MongoDB
+        gameState.setBoard(gameLogic.getBoard());
+        gameState.setCurrentPlayer(gameLogic.getCurrentPlayer());
+        gameStateRepository.save(gameState);
 
         logBoardState(gameId, gameLogic);
         logWin(player, win);
@@ -90,6 +104,7 @@ public class GameService {
         checkGameInProgress(game);
         Player player = getPlayerById(playerId);
 
+        GameState gameState = getGameStateByGameId(gameId);
         GameLogic gameLogic = games.get(gameId);
         updateGameCurrentPlayer(game, playerId);
 
@@ -100,6 +115,12 @@ public class GameService {
         boolean win = gameLogic.makeMove(row, col, player.getSymbol());
         Move move = createAndSaveMove(game, player, row, col);
         updateGameStatus(game, gameLogic, win);
+
+
+        // Update game state in MongoDB
+        gameState.setBoard(gameLogic.getBoard());
+        gameState.setCurrentPlayer(gameLogic.getCurrentPlayer());
+        gameStateRepository.save(gameState);
 
         logBoardState(gameId, gameLogic);
         logWin(player, win);
@@ -179,9 +200,14 @@ public class GameService {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid game level");
     }
 
-    private void clearGamesMap(Game game){
-        if(game.getStatus().equals(GameStatus.ENDED) || game.getStatus().equals(GameStatus.DRAW) || game.getStatus().equals(GameStatus.WINNER)){
+    private void clearGamesMap(Game game) {
+        if (game.getStatus().equals(GameStatus.ENDED) || game.getStatus().equals(GameStatus.DRAW) || game.getStatus().equals(GameStatus.WINNER)) {
             games.remove(game.getId());
         }
+    }
+
+    private GameState getGameStateByGameId(Long gameId) {
+        return gameStateRepository.findById(gameId.toString()).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Game state not found"));
     }
 }

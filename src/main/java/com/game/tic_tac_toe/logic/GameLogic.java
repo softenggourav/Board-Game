@@ -18,5 +18,9 @@ public interface GameLogic {
     int[] determineMediumMove();
 
     int[] determineBestMove();
+
+    char[][] getBoard();
+
+    char getCurrentPlayer();
 }
 

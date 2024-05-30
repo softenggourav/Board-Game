@@ -13,7 +13,6 @@ public class GameFactoryImpl implements GameFactory {
         switch (gameType) {
             case GameType.TIC_TAC_TOE:
                 return new TicTacToeLogic();
-            // Add cases for other games here
             default:
                 throw new IllegalArgumentException("Unknown game type: " + gameType);
         }

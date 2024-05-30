@@ -3,7 +3,6 @@ package com.game.tic_tac_toe.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.transaction.annotation.Transactional;
 
 @Entity
 @Data

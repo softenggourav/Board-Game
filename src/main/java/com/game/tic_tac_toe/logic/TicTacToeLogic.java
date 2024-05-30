@@ -1,10 +1,14 @@
 package com.game.tic_tac_toe.logic;
 
+import lombok.Getter;
+
 import java.util.Random;
 
 public class TicTacToeLogic implements GameLogic {
     private final Random random = new Random();
+    @Getter
     private char[][] board;
+    @Getter
     private char currentPlayer;
 
     public TicTacToeLogic() {

@@ -11,5 +11,5 @@ public class Player {
     private Long id;
 
     private String name;
-    private char symbol; // 'X' or 'O'
+    private char symbol;
 }
