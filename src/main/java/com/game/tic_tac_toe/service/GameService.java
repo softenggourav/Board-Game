@@ -65,6 +65,7 @@ public class GameService {
 
         Move move = createAndSaveMove(game, player, row, col);
         updateGameStatus(game, gameLogic, win);
+        clearGamesMap(game);
 
         logBoardState(gameId, gameLogic);
         logWin(player, win);
@@ -75,7 +76,9 @@ public class GameService {
     public Game endGame(Long gameId) {
         Game game = getGameById(gameId);
         game.setStatus(GameStatus.ENDED);
-        return gameRepository.save(game);
+        gameRepository.save(game);
+        clearGamesMap(game);
+        return game;
     }
 
     public Game checkGameStatus(Long gameId) {
@@ -174,5 +177,11 @@ public class GameService {
             return gameLogic.determineBestMove();
         }
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid game level");
+    }
+
+    private void clearGamesMap(Game game){
+        if(game.getStatus().equals(GameStatus.ENDED) || game.getStatus().equals(GameStatus.DRAW) || game.getStatus().equals(GameStatus.WINNER)){
+            games.remove(game.getId());
+        }
     }
 }
